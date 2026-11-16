@@ -9,6 +9,7 @@
 UK Working-Age & Child Welfare Reform Microsimulation & Macroeconomic Engine
 ===========================================================================
 File: uc_epc_welfare_model.py
+Repository: https://github.com/peterwrixon/DELTA_UC_Welfare_Modelling
 Standards Compliance:
     - UK Government Analysis Function: Quality Assurance of Code for Analysis
       and Research ("The Duck Book" / Reproducible Analytical Pipelines [RAP])
@@ -161,11 +162,13 @@ class WelfareModelConfig:
         )
     )
 
-    # --- 2. Component 1: Value-for-Money Food, Personal Care & Cleaning ---
-    c1_weekly_groceries_single_gbp: float = 49.50
+    # --- 2. Component 1: Food (Inc. £6/wk Convenience Buffer), Care & Cleaning ---
+    c1_weekly_scratch_groceries_single_gbp: float = 49.50
+    c1_weekly_convenience_meal_buffer_single_gbp: float = 6.00
+    c1_weekly_groceries_single_gbp: float = 55.50  # £49.50 scratch + £6.00 ready-meal/deal buffer
     c1_weekly_personal_care_single_gbp: float = 7.00
     c1_weekly_cleaning_single_gbp: float = 3.50
-    c1_weekly_total_single_gbp: float = 60.00  # £3,120.00/yr over 52 weeks
+    c1_weekly_total_single_gbp: float = 66.00  # £3,432.00/yr over 52 weeks (£3,400/yr 2 s.f.)
 
     # --- 3. Component 2: 19°C EPC Band A-G Utilities & Digital Inclusion ---
     epc_thermal_kwh_per_m2: Dict[str, float] = field(
@@ -245,12 +248,12 @@ class WelfareModelConfig:
     # --- 6. Capital-Income Equalisation & Inheritance Revenue Portfolio (£bn/yr) ---
     centax_cgt_equalisation_rra_yr1_bn: float = 14.00    # £19.70bn/yr by 2030
     centax_llp_partnership_nics_yr1_bn: float = 1.90     # £2.10bn/yr by 2030
-    centax_passive_investment_nics_bn: float = 1.20      # Net marginal yield >£25k
-    centax_iht_gifting_and_business_cap_bn: float = 3.40 # Net marginal IHT yield
-    centax_high_value_property_uplift_bn: float = 2.80   # Proportional >£2.0m bands
-    centax_carried_interest_and_buybacks_bn: float = 3.20 # £1.2bn CI + £2.0bn Buyback
-    total_capital_tax_package_yr1_bn: float = 26.50
-    total_capital_tax_package_mature_bn: float = 32.40
+    centax_passive_investment_nics_bn: float = 1.80      # Net marginal yield >£25k
+    centax_iht_gifting_and_business_cap_bn: float = 4.10 # Net marginal IHT yield
+    centax_high_value_property_uplift_bn: float = 3.00   # Proportional >£2.0m bands
+    centax_carried_interest_and_buybacks_bn: float = 4.20 # £1.2bn CI + £3.0bn Buyback
+    total_capital_tax_package_yr1_bn: float = 29.00
+    total_capital_tax_package_mature_bn: float = 34.90
 
 
 # ==============================================================================
@@ -262,7 +265,8 @@ def calculate_equivalised_caseload_and_comp1(
 ) -> Dict[str, object]:
     """
     Compute the OECD equivalised household distribution across all 7.2m UC
-    households and derive Component 1 (Food, Personal Care & Cleaning) outlays.
+    households and derive Component 1 (Food, Convenience/Ready-Meal Buffer,
+    Personal Care & Cleaning) outlays.
     """
     records: List[Dict[str, float | int | str]] = []
     total_equiv_units = 0.0
@@ -549,18 +553,18 @@ def compute_multi_horizon_scorecard(
         "Year 20 (2046)",
         "Year 25 (2051)",
     )
-    gross_marginal_outlay = (36.92, 35.50, 35.25, 35.14, 35.11, 35.11)
-    mpc_and_indirect_tax_clawback = (-7.21, -3.52, -3.52, -3.52, -3.52, -3.52)
+    gross_marginal_outlay = (40.01, 38.59, 38.34, 38.23, 38.20, 38.20)
+    mpc_and_indirect_tax_clawback = (-7.83, -3.83, -3.83, -3.83, -3.83, -3.83)
     adult_unemp_exits_k = (50, 200, 310, 380, 400, 400)
     non_sc_reemp_paye_nic = (-0.18, -0.72, -1.12, -1.38, -1.45, -1.45)
-    dwp_caseload_and_debt_exit = (-0.38, -1.50, -2.33, -2.84, -3.00, -3.00)
+    dwp_caseload_and_debt_exit = (-0.42, -1.65, -2.56, -3.12, -3.30, -3.30)
     core_nhs_preventative_savings = (-1.35, -2.10, -3.10, -4.10, -4.50, -4.90)
     hmcts_and_justice_savings = (-0.23, -0.45, -0.73, -1.00, -1.00, -1.00)
     la_ta_and_social_care_savings = (-0.46, -1.40, -2.57, -3.75, -3.75, -3.75)
     child_poverty_dividend = (-0.11, -0.60, -1.50, -2.95, -4.86, -6.80)
     psni_net_capital = (0.31, 0.00, 0.00, 0.00, 0.00, 0.00)
     net_came_and_cap_deduction = (0.57, 0.69, 0.69, 0.69, 0.69, 0.69)
-    capital_tax_yield_schedule = (26.50, 32.40, 32.40, 32.40, 32.40, 32.40)
+    capital_tax_yield_schedule = (29.00, 34.90, 34.90, 34.90, 34.90, 34.90)
 
     rows: List[Dict[str, float | str | int]] = []
     for i, h_label in enumerate(horizons):
@@ -679,7 +683,7 @@ def run_behavioural_sensitivity_suite(
         },
         {
             "channel": "6. Capital-Tax Portfolio Behavioural Yield",
-            "param_range": "£36.0bn (Low cost) / £32.4bn (Cen) / £29.0bn (High cost)",
+            "param_range": "£38.5bn (Low cost) / £34.9bn (Cen) / £31.5bn (High cost)",
             "low_psnb_bn": -3.6,
             "central_psnb_bn": 0.0,
             "high_psnb_bn": +3.4,
@@ -749,7 +753,7 @@ def format_ons_5col_markdown_tables(
     )
     out.append("")
     out.append(
-        "*Derivation Note (Table 1):* E_h = 1.0 + 0.5*(N_adults - 1) + 0.3*N_children(<14) + 0.5*N_children(14+). Single-adult base (E_h = 1.0) = £60/wk (£50/wk Eatwell groceries + £7.0/wk personal care & haircuts + £3.5/wk cleaning; £0 OTC medicines via NHS Pharmacy First) = £3,100/yr (£3,120 exact). National Outlay = Sum of Rows 1 to 6 = £30.9bn/yr."
+        "*Derivation Note (Table 1):* E_h = 1.0 + 0.5*(N_adults - 1) + 0.3*N_children(<14) + 0.5*N_children(14+). Single-adult base (E_h = 1.0) = £66/wk (£56/wk [£55.50 exact] groceries & convenience buffer [£49.50/wk scratch-cooked Eatwell groceries + £6.00/wk ready-meal/meal-deal buffer for time-constrained occasions] + £7.0/wk personal care & haircuts + £3.5/wk cleaning; £0 OTC medicines via NHS Pharmacy First) = £3,400/yr (£3,432 exact). National Outlay = Sum of Rows 1 to 6 = £34.0bn/yr (£34.03bn exact)."
     )
     out.append("")
 
@@ -796,19 +800,19 @@ def format_ons_5col_markdown_tables(
     )
     out.append("|---|---|---|---|---|")
     out.append(
-        "| [Row 1] Comp 1: Food, Care & Cleaning (+ Pharm First) | £4,300 | £30.9bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£29.0bn) |"
+        "| [Row 1] Comp 1: Food (+£6/wk Buffer), Care & Cleaning | £4,700 | £34.0bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£32.1bn) |"
     )
     out.append(
-        "| [Row 2] Comp 2: 19°C Utilities, Water & 5G Broadband | £2,300 | £16.9bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£29.0bn) |"
+        "| [Row 2] Comp 2: 19°C Utilities, Water & 5G Broadband | £2,300 | £16.9bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£32.1bn) |"
     )
     out.append(
-        "| [Row 3] Comp 3: Hybrid Circular Clothing (Opt 3B) | £880 | £6.4bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£29.0bn) |"
+        "| [Row 3] Comp 3: Hybrid Circular Clothing (Opt 3B) | £880 | £6.4bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£32.1bn) |"
     )
     out.append(
-        "| [Row 4] Comp 4: ONS RUC Transport & School Bus Pass | £1,200 | £8.8bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£29.0bn) |"
+        "| [Row 4] Comp 4: ONS RUC Transport & School Bus Pass | £1,200 | £8.8bn | Pooled in Row 5 (£34.0bn) | Pooled in Row 5 (+£32.1bn) |"
     )
     out.append(
-        "| [Row 5] **Subtotal: Comp 1–4 Core Living Package (All 7.2m HHs)** | **£8,700** | **£63.0bn** | **£34.0bn (£15.8bn Work-Cond. + £18.2bn LCWRA/Carer)** | **+£29.0bn (£63.0bn Minus £34.0bn)** |"
+        "| [Row 5] **Subtotal: Comp 1–4 Core Living Package (All 7.2m HHs)** | **£9,200** | **£66.1bn** | **£34.0bn (£15.8bn Work-Cond. + £18.2bn LCWRA/Carer)** | **+£32.1bn (£66.1bn Minus £34.0bn)** |"
     )
     out.append(
         "| [Row 6] Comp 5: Housing (34th LHA, BedTax, 100% CTR) | £3,100 | £22.2bn | £18.5bn (Base Housing Element) | +£3.7bn (£22.2bn Minus £18.5bn; Net of DHP) |"
@@ -820,17 +824,17 @@ def format_ons_5col_markdown_tables(
         "| [Row 8] Comp 7: Study Hubs (£15/Shift & Net OpEx) | £430 | £3.1bn | neg (-£0.2bn Sanctions Netted) | +£3.1bn (£2.9bn Shifts + £0.2bn Net OpEx) |"
     )
     out.append(
-        "| [Row 9] **Total Reformed Programme (Excl. Unchanged Specialist Base)** | **£12,000** | **£88.5bn** | **£52.5bn (Replaceable UC Counterfactual)** | **+£36.0bn (Sum of Rows 5 to 8; +£36.9bn Yr 1 w/ CapEx)** |"
+        "| [Row 9] **Total Reformed Programme (Excl. Unchanged Specialist Base)** | **£13,000** | **£91.6bn** | **£52.5bn (Replaceable UC Counterfactual)** | **+£39.1bn (Sum of Rows 5 to 8; +£40.0bn Yr 1 w/ CapEx)** |"
     )
     out.append(
         "| [Row 10] Memo: Unchanged Specialist Disability/Carer RAME Base | £2,500 | £18.2bn | £18.2bn (Retained in Both Baselines) | neg (£0.0bn Marginal; Deducts £7.7bn Participation Floor) |"
     )
     out.append(
-        "| [Row 11] **Total Gross RAME / Programme Reconciliation** | **£15,000** | **£106.7bn (Incl. Yr 1 DHSC)** | **£70.7bn (Total Legacy UC RAME)** | **+£36.0bn (+£36.9bn Yr 1 Total w/ CapEx & DHSC)** |"
+        "| [Row 11] **Total Gross RAME / Programme Reconciliation** | **£15,000** | **£109.8bn (Incl. Yr 1 DHSC)** | **£70.7bn (Total Legacy UC RAME)** | **+£39.1bn (+£40.0bn Yr 1 Total w/ CapEx & DHSC)** |"
     )
     out.append("")
     out.append(
-        "*Derivation Note (Table 3):* Both 'Reformed Gross Outlay' and 'Status Quo Baseline Outlay' are reported as positive expenditure figures, with 'Net Marginal Uplift' equal to Reformed Gross Outlay minus Status Quo Baseline Outlay. In Row 5, Components 1 to 4 (£30.9bn + £16.9bn + £6.4bn + £8.8bn = £63.0bn/yr across all 7.2m UC households) replace the £34.0bn/yr of legacy non-housing living allowances (£15.8bn/yr for the 4.7m work-conditional caseload plus £18.2bn/yr for the 4.3m No-Work-Requirements [LCWRA & Carer] caseload), yielding a Net Marginal Uplift of +£29.0bn/yr (+£28.98bn exact) on Components 1–4. Summing Row 5 (+£29.0bn), Row 6 (+£3.7bn), Row 7 (+£0.2bn), and Row 8 (+£3.1bn) yields the +£36.0bn/yr (+£35.98bn exact) Net Marginal Programme Uplift in Row 9 (and reconciles with the £70.7bn Status Quo vs. £106.7bn Reformed Total RAME in Row 11)."
+        "*Derivation Note (Table 3):* Both 'Reformed Gross Outlay' and 'Status Quo Baseline Outlay' are reported as positive expenditure figures, with 'Net Marginal Uplift' equal to Reformed Gross Outlay minus Status Quo Baseline Outlay. In Row 5, Components 1 to 4 (£34.03bn + £16.86bn + £6.36bn + £8.83bn = £66.08bn/yr [£66.1bn] across all 7.2m UC households) replace the £34.0bn/yr of legacy non-housing living allowances (£15.8bn/yr for the 4.7m work-conditional caseload plus £18.2bn/yr for the 4.3m No-Work-Requirements [LCWRA & Carer] caseload), yielding a Net Marginal Uplift of +£32.1bn/yr (+£32.08bn exact) on Components 1–4. Summing Row 5 (+£32.1bn), Row 6 (+£3.7bn), Row 7 (+£0.2bn), and Row 8 (+£3.1bn) yields the +£39.1bn/yr (+£39.07bn exact) Net Marginal Programme Uplift in Row 9 (and reconciles with the £70.7bn Status Quo vs. £109.8bn Reformed Total RAME in Row 11, rising to +£40.0bn/yr in Year 1 when adding +£0.5bn/yr DHSC passporting and +£0.4bn/yr Phase 1/2 Hub CapEx and mobilisation)."
     )
     out.append("")
 
@@ -853,7 +857,7 @@ def format_ons_5col_markdown_tables(
         )
     out.append("")
     out.append(
-        "*Derivation Note (Table 4):* Gross Marginal Outlay reflects the statutory progression of the Universal Credit (Removal of Two Child Limit) Act 2026 in the status quo replaceable baseline (+£36.9bn in Year 1; +£35.5bn in Year 5; +£35.1bn by Year 15). Total Synergised Offsets sum: (1) MPC & Indirect Tax Clawbacks (-£7.2bn in Year 1 under the k=1.28 short-run expenditure multiplier, transitioning by Year 5 under Bank of England monetary policy neutrality to the permanent -£3.5bn/yr point-of-sale VAT, Fuel Duty, Excise, and Hub staff PAYE composition return); (2) Non-Supply-Chain Adult Re-Employment PAYE/NICs & DWP Caseload/Debt Exits across 400,000 steady-state adult transitions (-£0.6bn Yr 1 to -£4.5bn Yr 25); (3) Core Preventative NHS (mental health, 19°C cold-home morbidity, and Pharmacy First GP/A&E substitution), HMCTS, and Local Authority Temporary Accommodation & Section 17/47 savings (-£2.0bn Yr 1 to -£9.7bn Yr 25); and (4) the Generational Child Poverty Dividend scored strictly on the marginal cohort above the 2026 statutory baseline (-£0.1bn Yr 1 to -£6.8bn Yr 25) = -£9.9bn in Year 1 rising to -£24.4bn/yr in Year 25. Post-Tax PSCB nets the Capital-Income Equalisation & Inheritance Portfolio (-£26.5bn/yr in Year 1 rising to -£32.4bn/yr from Year 5)."
+        "*Derivation Note (Table 4):* Gross Marginal Outlay (+£40.0bn in Year 1; +£38.6bn in Year 5; +£38.2bn by Year 15) incorporates the +£39.1bn/yr Core Uplift, +£0.5bn/yr DHSC passporting, Phase 1/2 Study Hub CDEL, and the statutory progression of the Universal Credit (Removal of Two Child Limit) Act 2026 in the status quo replaceable baseline (-£0.8bn/yr from Year 5). Total Synergised Offsets sum: (1) MPC & Indirect Tax Clawbacks (-£7.8bn in Year 1 under the k=1.28 short-run expenditure multiplier, transitioning by Year 5 under Bank of England monetary policy neutrality to the permanent -£3.8bn/yr point-of-sale VAT, Fuel Duty, Excise, and Hub staff PAYE composition return); (2) Non-Supply-Chain Adult Re-Employment PAYE/NICs & DWP Caseload/Debt Exits across 400,000 steady-state adult transitions (-£0.6bn Yr 1 to -£4.8bn Yr 25); (3) Core Preventative NHS (mental health, 19°C cold-home morbidity, and Pharmacy First GP/A&E substitution), HMCTS, and Local Authority Temporary Accommodation & Section 17/47 savings (-£2.0bn Yr 1 to -£9.7bn Yr 25); and (4) the Generational Child Poverty Dividend scored strictly on the marginal cohort above the 2026 statutory baseline (-£0.1bn Yr 1 to -£6.8bn Yr 25) = -£10.6bn in Year 1 rising to -£25.0bn/yr in Year 25. Post-Tax PSCB nets the Capital-Income Equalisation & Inheritance Portfolio (-£29.0bn/yr in Year 1 rising to -£34.9bn/yr from Year 5)."
     )
     out.append("")
 
@@ -907,12 +911,15 @@ class TestWelfareReformRAP(unittest.TestCase):
         )
 
     def test_01_oecd_equivalence_and_caseload_conservation(self) -> None:
-        """Verify household shares sum to 1.0, HHs == 7.2m, and E_h == 1.377."""
+        """Verify household shares sum to 1.0, HHs == 7.2m, E_h == 1.377, and Comp 1 == £34.03bn."""
         df_c1: pd.DataFrame = self.c1_res["comp1_table"]  # type: ignore[assignment]
         self.assertAlmostEqual(float(df_c1["share"].sum()), 1.0, places=9)
         self.assertEqual(int(df_c1["households"].sum()), 7_200_000)
         self.assertAlmostEqual(
             float(self.c1_res["mean_oecd_eh"]), 1.377, places=6
+        )
+        self.assertAlmostEqual(
+            float(self.c1_res["total_comp1_outlay_bn"]), 34.0262, places=3
         )
 
     def test_02_epc_thermal_monotonicity_and_landlord_penalty(self) -> None:
@@ -966,7 +973,7 @@ class TestWelfareReformRAP(unittest.TestCase):
         """Verify fmt_bn enforces £0.1bn cap & 'neg' for |val| < 0.05, and fmt_sf 2 s.f."""
         self.assertEqual(fmt_bn(0.024), "neg")
         self.assertEqual(fmt_bn(-0.049), "neg")
-        self.assertEqual(fmt_bn(35.98), "+£36.0bn")
+        self.assertEqual(fmt_bn(39.07), "+£39.1bn")
         self.assertEqual(fmt_sf(2342.0, 2, prefix="£"), "£2,300")
 
 
